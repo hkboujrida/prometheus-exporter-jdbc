@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-exporter-jdbc-service
+  namespace: default
+  labels:
+    app: prometheus-exporter-jdbc
+spec:
+  selector:
+    app: prometheus-exporter-jdbc
+  ports:
+  - name: metrics
+    port: 9853
+    targetPort: 9853
+    protocol: TCP
+  type: ClusterIP

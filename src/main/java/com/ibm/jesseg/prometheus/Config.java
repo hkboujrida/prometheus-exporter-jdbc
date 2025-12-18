@@ -134,6 +134,10 @@ public class Config {
       if(isIBMi()) {
         return m_hostname = "localhost";
       }
+      String hostEnv = System.getenv("HOSTNAME");
+      if(StringUtils.isNonEmpty(hostEnv)) {
+        return m_hostname = hostEnv;
+      }
       return m_hostname = ConsoleQuestionAsker.get().askNonEmptyStringQuestion(m_logger, "", "Enter system name: ");
     }
     return m_hostname = val.toString();
@@ -186,6 +190,10 @@ public class Config {
     if (null == val) {
       if(isIBMi()) {
         return m_username = "*CURRENT";
+      }
+      String userEnv = System.getenv("USERNAME");
+      if(StringUtils.isNonEmpty(userEnv)) {
+        return m_username = userEnv;
       }
       return m_username = ConsoleQuestionAsker.get().askNonEmptyStringQuestion(m_logger, "", "Username:");
     }

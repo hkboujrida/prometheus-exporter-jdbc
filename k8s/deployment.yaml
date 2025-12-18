@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-exporter-jdbc
+  namespace: default
+  labels:
+    app: prometheus-exporter-jdbc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-exporter-jdbc
+  template:
+    metadata:
+      labels:
+        app: prometheus-exporter-jdbc
+    spec:
+      containers:
+      - name: prometheus-exporter-jdbc
+        image: prometheus-exporter-jdbc:latest  # Replace with your actual image
+        ports:
+        - containerPort: 9853
+          name: metrics
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        env:
+        - name: USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: prometheus-exporter-jdbc-secret
+              key: username
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: prometheus-exporter-jdbc-secret
+              key: password
+        - name: HOSTNAME
+          valueFrom:
+            secretKeyRef:
+              name: prometheus-exporter-jdbc-secret
+              key: hostname
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/config.json
+          subPath: config.json
+      volumes:
+      - name: config-volume
+        configMap:
+          name: prometheus-exporter-jdbc-config
