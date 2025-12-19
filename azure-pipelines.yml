@@ -1,0 +1,59 @@
+# Azure DevOps Pipeline for Prometheus JDBC Exporter
+# This pipeline builds and pushes Docker images to Harbor registry
+
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Harbor registry configuration - update these variables in your pipeline
+  harborRegistry: 'your-harbor-registry.com'  # e.g., harbor.example.com
+  harborProject: 'your-project'  # Harbor project name
+  imageName: 'prometheus-exporter-jdbc'
+  imageTag: '$(Build.BuildNumber)'
+
+steps:
+- task: Docker@2
+  displayName: 'Build Docker image'
+  inputs:
+    command: 'build'
+    dockerfile: '**/Dockerfile'
+    tags: |
+      $(imageTag)
+      latest
+
+- task: Docker@2
+  displayName: 'Login to Harbor registry'
+  inputs:
+    command: 'login'
+    containerRegistry: 'harbor-connection'  # Service connection name
+
+- task: Docker@2
+  displayName: 'Tag image for Harbor'
+  inputs:
+    command: 'tag'
+    arguments: '$(imageName):$(imageTag) $(harborRegistry)/$(harborProject)/$(imageName):$(imageTag)'
+
+- task: Docker@2
+  displayName: 'Tag latest for Harbor'
+  inputs:
+    command: 'tag'
+    arguments: '$(imageName):latest $(harborRegistry)/$(harborProject)/$(imageName):latest'
+
+- task: Docker@2
+  displayName: 'Push image to Harbor'
+  inputs:
+    command: 'push'
+    containerRegistry: 'harbor-connection'
+    repository: '$(harborProject)/$(imageName)'
+    tags: |
+      $(imageTag)
+      latest
+
+- task: Docker@2
+  displayName: 'Logout from Harbor'
+  inputs:
+    command: 'logout'
+    containerRegistry: 'harbor-connection'

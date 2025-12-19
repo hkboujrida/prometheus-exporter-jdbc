@@ -25,7 +25,7 @@ This directory contains Kubernetes manifests for deploying the Prometheus JDBC E
 
 2. **Update the image reference in deployment.yaml:**
 
-   Change `prometheus-exporter-jdbc:latest` to your actual image location (e.g., `your-registry/prometheus-exporter-jdbc:v1.0.3`)
+   The deployment is already configured to use `ghcr.io/hkboujrida/prometheus-exporter-jdbc:latest`. If you need a different tag, update it accordingly.
 
 3. **Deploy to Kubernetes:**
 

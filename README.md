@@ -49,7 +49,30 @@ Successfully started Prometheus client on port 9853
 ```
 
 If you're not running on IBM i, you'll want to kill the program and modify
-`config.json` to have reasonable values for your needs. 
+`config.json` to have reasonable values for your needs.
+
+## Docker Deployment
+
+A Docker image is automatically built and published to GitHub Container Registry (GHCR) on every push to the main branch.
+
+### Running with Docker
+
+```bash
+docker run -p 9853:9853 \
+  -e USERNAME=your_username \
+  -e PASSWORD=your_password \
+  -e HOSTNAME=your_system_name \
+  ghcr.io/hkboujrida/prometheus-exporter-jdbc:latest
+```
+
+### CI/CD Options
+
+- **GitHub Actions**: Automatically builds and pushes to GHCR (see `.github/workflows/docker-publish.yml`)
+- **Azure DevOps**: Pipeline for Harbor registry (see `azure-pipelines.yml` and `azure-devops-setup.md`)
+
+### Kubernetes Deployment
+
+Kubernetes manifests are provided in the `k8s/` directory. See `k8s/README.md` for detailed deployment instructions.
 
 ### Known breaking changes
 
