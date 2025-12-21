@@ -16,7 +16,7 @@ description: "Task list for GitHub Actions Docker Image Build and Push feature"
 
 **Purpose**: Prepare the repository for the new workflow.
 
-- [x] T001 Verify Dockerfile existence and validity at repository root
+- [x] T001 Verify Dockerfile existence, validity, and non-root user configuration at repository root
 - [x] T002 [P] Create .github/workflows directory if it doesn't exist
 
 ---
@@ -43,7 +43,7 @@ description: "Task list for GitHub Actions Docker Image Build and Push feature"
 - [x] T005 [US1] Define workflow triggers for `push` to `main` in .github/workflows/docker-publish.yml
 - [x] T006 [US1] Configure `docker/setup-buildx-action` and `docker/login-action` in .github/workflows/docker-publish.yml
 - [x] T007 [US1] Configure `docker/metadata-action` for tagging (`latest`, `sha`, `semver`) in .github/workflows/docker-publish.yml
-- [x] T008 [US1] Configure `docker/build-push-action` to build and push to GHCR in .github/workflows/docker-publish.yml
+- [x] T008 [US1] Configure `docker/build-push-action` to build and push to GHCR (including multi-platform support) in .github/workflows/docker-publish.yml
 - [x] T009 [US1] Validate workflow syntax (dry-run or linter)
 
 **Checkpoint**: Automated builds on `main` are functional.
