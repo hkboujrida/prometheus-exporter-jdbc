@@ -1,0 +1,30 @@
+# Workflow Contract
+# Defines the expected behavior and interface of the docker-publish workflow
+
+name: Docker Build & Push
+
+triggers:
+  - type: push
+    branch: main
+    behavior: build_and_push
+  - type: pull_request
+    branch: main
+    behavior: build_only (validation)
+  - type: workflow_dispatch
+    behavior: build_and_push
+
+outputs:
+  registry: ghcr.io
+  repository: ${{ github.repository }}
+  
+  tags:
+    - pattern: type=raw,value=latest
+      condition: branch == main
+    - pattern: type=sha
+      format: sha-{{short_sha}}
+    - pattern: type=semver,pattern={{version}}
+      condition: event == tag
+
+permissions:
+  packages: write
+  contents: read

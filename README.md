@@ -1,5 +1,7 @@
 # JDBC Prometheus Exporter
 
+[![Docker Build & Push](https://github.com/hkboujrida/prometheus-exporter-jdbc/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/hkboujrida/prometheus-exporter-jdbc/actions/workflows/docker-publish.yml)
+
 Prometheus exporter for IBM i and other databases. This provides an interface for passive metrics collection. That is, Prometheus can scrape this exporter for metrics.
 
 Any JDBC driver may be used as a data source for Prometheus. The metrics are customizable. 
