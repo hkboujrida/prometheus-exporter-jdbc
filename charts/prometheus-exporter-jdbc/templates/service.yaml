@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "prometheus-exporter-jdbc.fullname" . }}
+  labels:
+    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "prometheus-exporter-jdbc.selectorLabels" . | nindent 4 }}

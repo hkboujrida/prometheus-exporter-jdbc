@@ -3,6 +3,8 @@
 Auto-generated from all feature plans. Last updated: 2025-12-21
 
 ## Active Technologies
+- Helm (v3+), YAML (002-helm-chart-github)
+- GitHub Container Registry (OCI) (002-helm-chart-github)
 
 - YAML (GitHub Actions), Docker (001-github-actions-docker-push)
 
@@ -22,6 +24,7 @@ tests/
 YAML (GitHub Actions), Docker: Follow standard conventions
 
 ## Recent Changes
+- 002-helm-chart-github: Added Helm (v3+), YAML
 
 - 001-github-actions-docker-push: Added YAML (GitHub Actions), Docker
 

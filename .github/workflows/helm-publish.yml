@@ -1,0 +1,42 @@
+name: Helm Chart Publish
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'charts/prometheus-exporter-jdbc/**'
+
+env:
+  REGISTRY: ghcr.io
+  CHART_NAME: prometheus-exporter-jdbc
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.12.0
+
+      - name: Login to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} --username ${{ github.actor }} --password-stdin
+
+      - name: Lint Helm Chart
+        run: helm lint charts/${{ env.CHART_NAME }}
+
+      - name: Package Helm Chart
+        run: helm package charts/${{ env.CHART_NAME }}
+
+      - name: Push Helm Chart to OCI Registry
+        run: |
+          CHART_VERSION=$(grep 'version:' charts/${{ env.CHART_NAME }}/Chart.yaml | awk '{print $2}')
+          helm push ${{ env.CHART_NAME }}-${CHART_VERSION}.tgz oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts

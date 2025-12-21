@@ -76,6 +76,20 @@ docker run -p 9853:9853 \
 
 Kubernetes manifests are provided in the `k8s/` directory. See `k8s/README.md` for detailed deployment instructions.
 
+### Helm Chart Deployment
+
+A Helm chart is available for standard Kubernetes deployment.
+
+```bash
+# Login to GHCR
+helm registry login ghcr.io -u <username> -p <token>
+
+# Install the chart
+helm install my-exporter oci://ghcr.io/hkboujrida/charts/prometheus-exporter-jdbc --version <version>
+```
+
+See [charts/prometheus-exporter-jdbc/README.md](charts/prometheus-exporter-jdbc/README.md) for configuration details.
+
 ### Known breaking changes
 
 **In version 1.0**

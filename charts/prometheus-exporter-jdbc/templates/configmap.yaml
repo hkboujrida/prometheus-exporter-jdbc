@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-exporter-jdbc.fullname" . }}
+  labels:
+    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {{- mustToPrettyJson .Values.config | nindent 4 }}
