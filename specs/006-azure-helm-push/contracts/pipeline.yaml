@@ -1,0 +1,39 @@
+# Azure DevOps Pipeline Contract
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - charts/prometheus-exporter-jdbc
+
+variables:
+  - group: HarborCredentials # Assumes a variable group named HarborCredentials
+
+stages:
+  - stage: BuildAndPublish
+    jobs:
+      - job: HelmPush
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: HelmInstaller@0
+            inputs:
+              helmVersion: '3.12.0'
+              installKubectl: false
+
+          - script: |
+              helm lint charts/prometheus-exporter-jdbc
+            displayName: 'Lint Helm Chart'
+
+          - script: |
+              helm package charts/prometheus-exporter-jdbc
+            displayName: 'Package Helm Chart'
+
+          - script: |
+              echo $(HARBOR_PASSWORD) | helm registry login $(HARBOR_URL) --username $(HARBOR_USERNAME) --password-stdin
+              helm push *.tgz oci://$(HARBOR_URL)/library
+            displayName: 'Push to Harbor'
+            env:
+              HARBOR_PASSWORD: $(HARBOR_PASSWORD)

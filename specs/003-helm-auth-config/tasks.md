@@ -1,3 +1,7 @@
+---
+description: "Task list for feature 003-helm-auth-config"
+---
+
 # Tasks: Enable configuration of username, hostname, and password secret in Helm chart
 
 **Spec**: `specs/003-helm-auth-config/spec.md`
@@ -59,6 +63,7 @@ graph TD
 - [x] T015 Validate `charts/prometheus-exporter-jdbc/Chart.yaml` version bump (if not handled by CI)
 - [x] T016 Run full `helm lint charts/prometheus-exporter-jdbc`
 - [x] T017 Update `charts/prometheus-exporter-jdbc/README.md` with new configuration options documentation
+- [x] T019 Run Trivy vulnerability scan on Helm chart (Constitution Requirement)
 - [x] T018 Perform end-to-end manual deployment test on a local cluster
 
 ## Implementation Strategy

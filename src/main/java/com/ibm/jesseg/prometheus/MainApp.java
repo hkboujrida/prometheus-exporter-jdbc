@@ -130,6 +130,21 @@ public class MainApp {
             mapping.setConstraint(constraint);
             constraintHandler.addConstraintMapping(mapping);
 
+            final Server finalServer = server;
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        logger.println("Shutting down application...");
+                        if (finalServer != null) {
+                            finalServer.stop();
+                        }
+                    } catch (Exception e) {
+                        logger.exception(e);
+                    }
+                }
+            });
+
             server.start();
 
             String successMessage = "\n\n\n";
@@ -153,6 +168,7 @@ public class MainApp {
                     logger.printExceptionStack_verbose(e);
                 }
             }
+            System.exit(1);
         }
     }
 

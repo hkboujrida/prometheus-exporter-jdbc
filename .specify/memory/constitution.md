@@ -1,17 +1,11 @@
 <!--
 Sync Impact Report:
-- Version Change: Template -> 1.0.0
-- New Principles:
-  - I. Configuration-First (Defined)
-  - II. Universal Connectivity (Defined)
-  - III. Container-Native (Defined)
-  - IV. Observability (Defined)
-  - V. Stability & Compatibility (Defined)
-- Added Sections: Security Standards, Development & Release, Governance
+- Version Change: 1.0.0 -> 1.1.0
+- Modified Sections: Security Standards (Added Trivy scanning requirement)
 - Templates Status:
   - .specify/templates/plan-template.md: ✅
   - .specify/templates/spec-template.md: ✅
-  - .specify/templates/tasks-template.md: ✅
+  - .specify/templates/tasks-template.md: ✅ (Added scanning verification task)
 -->
 # JDBC Prometheus Exporter Constitution
 
@@ -36,6 +30,8 @@ Changes MUST NOT break existing `config.json` schemas or Prometheus scrape targe
 
 Secrets (passwords) MUST NOT be logged or hardcoded. Support for encrypted connections (SSL/TLS) via JDBC driver properties is required. Docker images MUST run as non-root users where possible.
 
+Artifacts (Docker images, Helm charts) MUST be scanned for vulnerabilities (e.g., using Trivy) during the CI/CD process. Identified vulnerabilities SHOULD be remediated where feasible, prioritizing Critical and High severity issues.
+
 ## Development & Release
 
 - **Build System**: Maven is the authoritative build tool.
@@ -47,4 +43,4 @@ Secrets (passwords) MUST NOT be logged or hardcoded. Support for encrypted conne
 
 Amendments to this constitution require a Pull Request with "Constitution" label. Changes to Core Principles require consensus from maintainers. Adherence to these principles is checked during Code Review.
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-21 | **Last Amended**: 2025-12-21
+**Version**: 1.1.0 | **Ratified**: 2025-12-21 | **Last Amended**: 2025-12-23

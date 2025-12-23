@@ -52,7 +52,7 @@ As a developer setting up a quick test environment, I want the option to provide
 ### Edge Cases
 
 - **Missing Secret**: If the referenced secret does not exist, the Pod will fail to start (ContainerConfigError) - this is expected K8s behavior.
-- **Conflict**: If both an external secret name and a password for creation are provided, the chart should prioritize one or fail validation. (Assumption: Prioritize external secret if specified, or use specific flags).
+- **Conflict**: If `secret.create` is true AND `secret.name` is provided, the chart will attempt to create a Secret with the provided name. If a Secret with that name already exists and is managed by Helm, the upgrade may succeed or fail depending on Helm's ownership checks. If it exists and is unmanaged, the install will fail. **Decision**: User is responsible for ensuring name uniqueness or managing the conflict.
 - **Empty Values**: If hostname/username are empty strings, the application might fail to connect or prompt for input (in interactive mode). In a pod, it should likely fail or use defaults.
 
 ## Requirements *(mandatory)*

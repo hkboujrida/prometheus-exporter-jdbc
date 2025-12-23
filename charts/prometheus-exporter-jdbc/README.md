@@ -34,9 +34,16 @@ The following table lists the configurable parameters of the chart and their def
 | `secret.name` | Name of the secret to use or create | `""` |
 | `secret.key` | Key in the secret containing the password | `"password"` |
 | `secret.password` | Password value (used if secret.create is true) | `""` |
+| `podSecurityContext` | Security context for the Pod | (See values.yaml) |
+| `securityContext` | Security context for the Container | (See values.yaml) |
+| `resources` | CPU/Memory requests and limits | (See values.yaml) |
 | `config` | Application configuration (injected as config.json) | (See values.yaml) |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`.
+
+## Probes
+
+The chart configures Liveness and Readiness probes on the metric port (9853) to ensure the application is healthy and ready to serve traffic.
 
 ## Custom Config
 
