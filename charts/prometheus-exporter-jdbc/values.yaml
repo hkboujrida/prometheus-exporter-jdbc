@@ -61,3 +61,13 @@ config:
       sql: "SELECT 1 FROM SYSIBM.SYSDUMMY1"
       interval: 60
       enabled: true
+
+env:
+  hostname: ""
+  username: ""
+
+secret:
+  create: false
+  name: ""
+  key: "password"
+  password: ""

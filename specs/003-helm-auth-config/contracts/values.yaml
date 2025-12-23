@@ -1,0 +1,25 @@
+# Contract: Helm Values Schema Extension
+
+# Environment variable overrides for database connection
+env:
+  # hostname: "db.example.com"
+  # username: "dbuser"
+  hostname: ""
+  username: ""
+
+# Secret management for database password
+secret:
+  # When true, the chart will create a Secret using the 'password' value below.
+  # When false, you must create the secret externally and provide its name.
+  create: false
+  
+  # Name of the secret.
+  # If create=true and name is empty, fullname template will be used.
+  # If create=false, this MUST be the name of the pre-existing secret.
+  name: ""
+  
+  # The key in the secret that holds the password.
+  key: "password"
+  
+  # The password to put in the secret (only used if create=true).
+  password: ""

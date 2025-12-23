@@ -60,3 +60,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Get the password secret name.
+*/}}
+{{- define "prometheus-exporter-jdbc.secretName" -}}
+{{- if .Values.secret.name }}
+{{- .Values.secret.name }}
+{{- else }}
+{{- include "prometheus-exporter-jdbc.fullname" . }}
+{{- end }}
+{{- end }}

@@ -31,6 +31,22 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            {{- if .Values.env.hostname }}
+            - name: HOSTNAME
+              value: {{ .Values.env.hostname | quote }}
+            {{- end }}
+            {{- if .Values.env.username }}
+            - name: USERNAME
+              value: {{ .Values.env.username | quote }}
+            {{- end }}
+            {{- if or .Values.secret.name .Values.secret.create }}
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "prometheus-exporter-jdbc.secretName" . }}
+                  key: {{ .Values.secret.key }}
+            {{- end }}
           ports:
             - name: http
               containerPort: 9853
