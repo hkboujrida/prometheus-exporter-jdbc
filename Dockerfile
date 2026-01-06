@@ -27,4 +27,4 @@ COPY src/main/resources/com/ibm/jesseg/prometheus/config.json config.json
 EXPOSE 9853
 
 # Run the application
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
