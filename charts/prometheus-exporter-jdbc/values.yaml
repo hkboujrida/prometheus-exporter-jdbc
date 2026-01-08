@@ -86,3 +86,16 @@ secret:
   name: ""
   key: "password"
   password: ""
+
+scaling:
+  enabled: true
+  image:
+    repository: bitnami/kubectl
+    tag: latest
+    pullPolicy: IfNotPresent
+  down:
+    schedule: "0 18 * * *"
+    replicas: 0
+  up:
+    schedule: "0 8 * * *"
+    replicas: 1

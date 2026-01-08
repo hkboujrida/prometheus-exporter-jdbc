@@ -1,0 +1,47 @@
+{{- if .Values.scaling.enabled -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "prometheus-exporter-jdbc.fullname" . }}-scale-down
+  labels:
+    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.scaling.down.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "prometheus-exporter-jdbc.serviceAccountName" . }}
+          containers:
+          - name: kubectl
+            image: "{{ .Values.scaling.image.repository }}:{{ .Values.scaling.image.tag }}"
+            imagePullPolicy: {{ .Values.scaling.image.pullPolicy }}
+            command:
+            - /bin/sh
+            - -c
+            - kubectl scale deployment {{ include "prometheus-exporter-jdbc.fullname" . }} --replicas={{ .Values.scaling.down.replicas }}
+          restartPolicy: OnFailure
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "prometheus-exporter-jdbc.fullname" . }}-scale-up
+  labels:
+    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.scaling.up.schedule | quote }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "prometheus-exporter-jdbc.serviceAccountName" . }}
+          containers:
+          - name: kubectl
+            image: "{{ .Values.scaling.image.repository }}:{{ .Values.scaling.image.tag }}"
+            imagePullPolicy: {{ .Values.scaling.image.pullPolicy }}
+            command:
+            - /bin/sh
+            - -c
+            - kubectl scale deployment {{ include "prometheus-exporter-jdbc.fullname" . }} --replicas={{ .Values.scaling.up.replicas }}
+          restartPolicy: OnFailure
+{{- end }}
