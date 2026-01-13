@@ -3,26 +3,23 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ include "prometheus-exporter-jdbc.fullname" . }}-scaling
-  labels:
-    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
 rules:
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    resourceNames: [{{ include "prometheus-exporter-jdbc.fullname" . | quote }}]
-    verbs: ["get", "patch", "update"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "deployments/scale"]
+  verbs: ["get", "patch", "update"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ include "prometheus-exporter-jdbc.fullname" . }}-scaling
-  labels:
-    {{- include "prometheus-exporter-jdbc.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "prometheus-exporter-jdbc.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
   kind: Role
   name: {{ include "prometheus-exporter-jdbc.fullname" . }}-scaling
-subjects:
-  - kind: ServiceAccount
-    name: {{ include "prometheus-exporter-jdbc.serviceAccountName" . }}
-    namespace: {{ .Release.Namespace }}
+  apiGroup: rbac.authorization.k8s.io
 {{- end }}
