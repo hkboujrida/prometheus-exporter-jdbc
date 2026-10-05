@@ -54,6 +54,10 @@ This directory contains Kubernetes manifests for deploying the Prometheus JDBC E
 
 - **Secret**: Contains sensitive credentials (username, password, hostname)
 - **ConfigMap**: Contains the exporter configuration (queries, intervals, etc.)
+  in the same `config.json` format the standalone binary uses. See the
+  repository README for the full key reference (provider keys:
+  `provider`, `connection_string`, `odbc_driver`, `driver_assembly`,
+  `driver_factory`).
 - **Deployment**: Runs the application with proper resource limits
 - **Service**: Exposes the metrics endpoint within the cluster
 
