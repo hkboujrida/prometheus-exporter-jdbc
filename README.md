@@ -4,45 +4,44 @@
 
 Prometheus exporter for IBM i and other databases. This provides an interface for passive metrics collection. That is, Prometheus can scrape this exporter for metrics.
 
-Any JDBC driver may be used as a data source for Prometheus. The metrics are customizable. 
+Any database reachable through an ADO.NET provider may be used as a data
+source. The metrics are customizable.
 Any numeric metric available through SQL can be monitored using this client!
 
-This exporter was built for and tested on IBM i as a way to monitor IBM i system and application status through SQL.
-As such, its out-of-box-experience is centered around the IBM i use case.
+This exporter was built for and tested on IBM i as a way to monitor IBM i
+system and application status through SQL (the original implementation was
+Java/JDBC; this .NET rewrite keeps the same config format, metric names,
+endpoints, and Docker contract).
 
 - [Installation and Startup](#installation-and-startup)
-  - [Known Breatking Changes](#known-breaking-changes)
-  - [Using another JDBC driver](#using-another-jdbc-driver)
-  - [Using the `nohup` utility](#using-the-nohup-utility)
+  - [Known Breaking Changes](#known-breaking-changes)
+  - [Using a database provider](#using-a-database-provider)
 - [Running on a different port](#running-on-a-different-port)
 - [Prometheus Configuration](#prometheus-configuration)
 - [JSON Configuration](#json-configuration)
   - [Valid values for JSON configuration](#valid-values-for-json-configuration)
     - [`queries` element](#queries-element)
 - [Collection data modes](#collection-data-modes)
-  - [Single-row mode](#single-row-mode)
-  - [Multi-row mode](#multi-row-mode)
 - [Collection timing modes](#collection-timing-modes)
-  - [Interval-based](#interval-based)
-  - [Point-in-time](#point-in-time)
 - [Managing with Service Commander (IBM i only)](#managing-with-service-commander-ibm-i-only)
 
 ## Installation and Startup
 
-1. Download the latest `prom-client-ibmi.jar` file from
-[the releases page](https://github.com/ThePrez/Prom-client-IBMi/releases).
-Place this file the filesystem somewhere. 
-1. From a command line, `cd` to the directory where you placed
-`prom-client-ibmi.jar` and run:
+Option A — Docker (recommended): see [Docker Deployment](#docker-deployment).
+
+Option B — standalone binary. Download the latest
+`prometheus-exporter-jdbc-linux-x64.zip` from
+[the releases page](https://github.com/hkboujrida/prometheus-exporter-jdbc/releases),
+unzip, and run:
 ```bash
-java -jar prom-client-ibmi.jar
+./PromExporter.Jdbc
 ```
 Create a default configuration file by responding `y` to the
 following prompt:
 ```bash
-Configuration file config.json not found. Would you like to initialize one with defaults? [y] 
+Configuration file config.json not found. Would you like to initialize one with defaults? [y]
 ```
-You Should see a series of messages about collectors being registered. If you see the
+You should see a series of messages about collectors being registered. If you see the
 following message, the client is running successfully:
 ```
 ==============================================================
@@ -52,6 +51,10 @@ Successfully started Prometheus client on port 9853
 
 If you're not running on IBM i, you'll want to kill the program and modify
 `config.json` to have reasonable values for your needs.
+
+In non-interactive environments (containers, systemd), set
+`PROMCLIENT_NONINTERACTIVE=1`; missing required values then fail fast with a
+clear error instead of prompting.
 
 ## Docker Deployment
 
@@ -64,8 +67,13 @@ docker run -p 9853:9853 \
   -e USERNAME=your_username \
   -e PASSWORD=your_password \
   -e HOSTNAME=your_system_name \
+  -v /path/to/config.json:/app/config.json:ro \
   ghcr.io/hkboujrida/prometheus-exporter-jdbc:latest
 ```
+
+Recognized environment variables: `PORT`, `HOSTNAME`, `USERNAME`, `PASSWORD`,
+`PROMCLIENT_PORT`, `PROMCLIENT_CONFIG` (path), `PROMCLIENT_NONINTERACTIVE`,
+`PROMCLIENT_VERBOSE`.
 
 ### CI/CD Options
 
@@ -92,26 +100,54 @@ See [charts/prometheus-exporter-jdbc/README.md](charts/prometheus-exporter-jdbc/
 
 ### Known breaking changes
 
+**In the .NET rewrite (current)**
+- Java/JDBC configuration keys are replaced by provider configuration (see
+  [Using a database provider](#using-a-database-provider)). Legacy
+  `driver_class`/`driver_uri` in an existing `config.json` are accepted:
+  `driver_class` only supplies the `driver_class` metric label, `driver_uri`
+  is used as the connection string.
+- After a database failure, gauges re-register automatically on the next
+  successful gather. (The old Java client permanently unregistered single-row
+  gauges after a gather error.)
+- The `promclient.port` Java system property is replaced by the
+  `PROMCLIENT_PORT` environment variable.
+
 **In version 1.0**
 - The default value for `include_hostname` is now `false`. By default, the host name will not be included in the metric names (as the host name is included in the label). This may break existing configurations.
-- The SQL query specified can now contain multiple SQL statements, separated by `; `. This is implemented by a dump "split" and not by any SQL parser logic. As such, this will break any existing SQL query that correctly contains this string. 
+- The SQL query specified can now contain multiple SQL statements, separated by `; `. This is implemented by a dump "split" and not by any SQL parser logic. As such, this will break any existing SQL query that correctly contains this string.
 
-### Using another JDBC driver
+### Using a database provider
 
-The IBM i JDBC driver is bundled with this exporter. 
-If you'd like to use a different JDBC driver, you will need to specify the necessary options
-in the configuration (namely, `driver_class` and `driver_uri`). You will also need to
-explicitly add that driver to the class path. For instance:
+The exporter ships with two providers:
 
+- **`odbc`** (default) — for IBM i via the
+  [IBM i Access Client Solutions ODBC driver](https://www.ibm.com/support/pages/ibm-i-access-client-solutions)
+  (unixODBC-based, Linux x86-64/arm64). With a bare `hostname`/`username`/`password`
+  the exporter builds
+  `DRIVER={IBM i Access ODBC Driver};SYSTEM=<hostname>;UID=...;PWD=...`;
+  override the driver name via `odbc_driver` or give a full `connection_string`.
+- **`sqlite`** — handy for demos/tests; `connection_string` (or `hostname`) is the file path.
+
+Any other ADO.NET provider (e.g. IBM's `IBM.Data.DB2` .NET provider for IBM i,
+Oracle, Postgres) is loaded dynamically:
+
+```json
+{
+  "provider": "custom",
+  "driver_assembly": "/drivers/IBM.Client.dll",
+  "driver_factory": "IBM.Data.DB2.Core.DB2CoreClientLibraryFactory",
+  "connection_string": "Server=myas400:8471;Database=MYLIB;UID=user;PWD=secret;"
+}
 ```
-java -cp prom-client-ibmi.jar:myjdbcdriver.jar com.ibm.jesseg.prometheus.MainApp
-```
 
-### Using the `nohup` utility
+For IBM i inside Docker, build the image with the ACS ODBC driver installed,
+or run the exporter on a host that has it and point `hostname` at your system.
+
+### Running headless
 If you would like to run the program in the background so that you can exit
 your shell and keep the Prometheus client running, you can use the `nohup` utility:
 ```bash
-nohup java -jar prom-client-ibmi.jar > prom-client.log 2>&1
+nohup ./PromExporter.Jdbc > prom-client.log 2>&1
 ```
 
 ## Running on a different port
@@ -119,7 +155,7 @@ nohup java -jar prom-client-ibmi.jar > prom-client.log 2>&1
 The Prometheus client port can be customized in several ways. The port
 is determined by the following, in order of precedence:
 - The `PORT` environment variable
-- The `promclient.port` Java system property
+- The `PROMCLIENT_PORT` environment variable
 - The `port` value of the JSON configuration file
 - The default value of 9853
 
@@ -138,138 +174,39 @@ scrape_configs:
 
 ## JSON Configuration
 
-See [config.json](./config.json) for an example JSON file, which contains the
-following:
-```json
-{
-  "port": 9853,
-
-  "queries": [{
-      "name": "System Statistics",
-      "interval": 60,
-      "enabled": true,
-      "prefix": "STATS",
-      "sql": "SELECT * FROM TABLE(QSYS2.SYSTEM_STATUS(RESET_STATISTICS=>'YES',DETAILED_INFO=>'ALL')) X"
-    },
-    {
-      "name": "System Activity",
-      "interval": 20,
-      "prefix": "SYSACT",
-      "enabled": true,
-      "sql": "SELECT * FROM TABLE(QSYS2.SYSTEM_ACTIVITY_INFO())"
-    },
-    {
-      "name": "number of remote connections",
-      "interval": 30,
-      "enabled": true,
-      "sql": "select COUNT(REMOTE_ADDRESS) as REMOTE_CONNECTIONS from qsys2.netstat_info where TCP_STATE = 'ESTABLISHED' AND REMOTE_ADDRESS != '::1' AND REMOTE_ADDRESS != '127.0.0.1'"
-    },
-    {
-      "name": "Memory Pool Info",
-      "interval": 100,
-      "enabled": true,
-      "multi_row": true,
-      "prefix": "MEMPOOL",
-      "sql": "SELECT POOL_NAME,CURRENT_SIZE,DEFINED_SIZE,MAXIMUM_ACTIVE_THREADS,CURRENT_THREADS,RESERVED_SIZE FROM TABLE(QSYS2.MEMORY_POOL(RESET_STATISTICS=>'YES')) X"
-    },
-    {
-      "name": "Plan Cache Analysis",
-      "interval": 45,
-      "multi_row": true,
-      "enabled": true,
-      "prefix": "PLAN_CACHE",
-      "sql": "call QSYS2.DUMP_PLAN_CACHE_PROPERTIES('QTEMP', 'PCPROP1');
-select replace(upper(HEADING), ' ', '_') as HEADING, value,
-       case
-         when
-           (left(value, 8) = '*DEFAULT')
-           then
-             substr(
-               value, locate_in_string(value, '(', 1) + 1, locate_in_string(value, ')', 1) -
-                 locate_in_string(value, '(', 1) - 1)
-         when (substr(value, 9, 1) = '(') then substr(value, 1, 8)
-         else value
-       end as value
-  from qtemp.pcprop1
-  where value is not null and
-        value <> '*AUTO' and
-        length(trim(value)) > 0 and
-        value <> '-' and
-        replace(upper(HEADING), ' ', '_') not in ('TIME_OF_SUMMARY',
-          'PLAN_CACHE_CREATION_TIME', 'LAST_PLAN_CACHE_AUTOSIZING_ADJUSTMENT',
-          'LAST_AUTOSIZING_LIMITED_DUE_TO_TEMPORARY_STORAGE', 'TIME_PLAN_CACHE_WAS_LAST_PRUNED',
-          'ACTIVITY_THRESHOLDS_START_TIME')"
-    },
-    {
-      "name": "Named Temp Storage buckets",
-      "interval": 90,
-      "multi_row": true,
-      "enabled": true,
-      "prefix": "TMP_STG_BUCKETS",
-      "sql": "select replace(upper(REPLACE(GLOBAL_BUCKET_NAME, '*','')), ' ', '_') as NAME, BUCKET_CURRENT_SIZE as CURRENT_SIZE, BUCKET_PEAK_SIZE as PEAK_SIZE from QSYS2.SystmpSTG where GLOBAL_BUCKET_NAME IS NOT NULL"
-    },
-    {
-      "name": "Unnamed Temp Storage buckets",
-      "interval": 90,
-      "multi_row": false,
-      "enabled": true,
-      "prefix": "UNNAMED_TMP_STG_BUCKETS",
-      "sql": "select SUM(BUCKET_CURRENT_SIZE) as CURRENT_SIZE, sum(BUCKET_PEAK_SIZE) as PEAK_SIZE from QSYS2.SystmpSTG where GLOBAL_BUCKET_NAME IS NULL"
-    },
-    {
-      "name": "HTTP Server metrics",
-      "interval": 60,
-      "multi_row": true,
-      "enabled": true,
-      "prefix": "HTTP",
-      "sql": "select SERVER_NAME concat '_' concat replace(HTTP_FUNCTION, ' ','_') as SERVER_FUNC, SERVER_NORMAL_CONNECTIONS, SERVER_SSL_CONNECTIONS, SERVER_ACTIVE_THREADS, SERVER_IDLE_THREADS, SERVER_TOTAL_REQUESTS, SERVER_TOTAL_REQUESTS_REJECTED, SERVER_TOTAL_RESPONSES, REQUESTS, RESPONSES, NONCACHE_RESPONSES, BYTES_RECEIVED, BYTES_SENT, NONCACHE_PROCESSING_TIME, CACHE_PROCESSING_TIME from qsys2.HTTP_SERVER_INFO      "
-    },
-    {
-      "name": "System Values",
-      "interval": 333,
-      "multi_row": true,
-      "prefix": "SYSVAL",
-      "sql": "select SYSTEM_VALUE_NAME,CURRENT_NUMERIC_VALUE from QSYS2.SYSTEM_VALUE_INFO where CURRENT_NUMERIC_VALUE IS NOT NULL"
-    }
-  ]
-}
-```
-
-Notes about the JSON configuration file:
-- The program will create the default version for you if you don't create one yourself
-- The location of the configuration file can be customized by the `promclient.config` Java system property
-- The default configuration gathers metrics with just two queries. You can customize your metrics collection with any SQL query you'd like to monitor with prometheus.
-- For each query, the `interval` value represents the interval between data collection attempts
-for that query, in seconds.
+See [default-config.json](src/PromExporter.Jdbc/Resources/default-config.json) for the example JSON file written at first startup
+(IBM i default queries against `QSYS2` service functions — see the
+[metrics list](#metrics-gathered-with-default-config-ibm-i)).
 
 ### Valid values for JSON configuration
 
 | Key name           | Type     | required? | Description                                      |
 | ------------------ | -------- | ----------| -------------------------------------------------|
-| `queries`          | array    | yes       | Array of elements specifying which SQL queries to run |  
-| `driver_class`     | String   | no        | The JDBC driver class (default: "com.ibm.as400.access.AS400JDBCDriver") |
-| `driver_uri`       | String   | no        | The JDBC connection string (default: "jdbc:as400://localhost")    | 
-| `hostname`         | String   | no        | The hostname of the system to connect to (default: localhost)      | 
-| `username`         | String   | no        | Username to be used for the connection | 
-| `password`         | String   | no        | Password for the connection. **NOT SECURE** |
+| `queries`          | array    | yes       | Array of elements specifying which SQL queries to run |
+| `port`             | Integer  | no        | TCP port to serve on (default 9853)              |
+| `provider`         | String   | no        | `odbc` (default), `sqlite`, or `custom` (`db2` aliases `custom`) |
+| `connection_string`| String   | no        | Full provider connection string; overrides built defaults |
+| `odbc_driver`      | String   | no        | ODBC driver name (default `IBM i Access ODBC Driver`) |
+| `driver_assembly`  | String   | no        | Path to a custom ADO.NET provider assembly       |
+| `driver_factory`   | String   | no        | `DbProviderFactory` type inside `driver_assembly` |
+| `hostname`         | String   | no        | System to connect to / display in metric labels (default: `HOSTNAME` env or prompt) |
+| `username`         | String   | no        | Username for the connection (`USERNAME` env or prompt) |
+| `password`         | String   | no        | Password for the connection. **NOT SECURE** (`PASSWORD` env or prompt) |
 
-**NOTE: You may be prompted for any needed values (for instance, a password) at the command line if not specified in the JSON configuration**
-
+**NOTE: The program fails fast if a needed value (for instance a password) is
+neither configured, in the environment, nor promptable on an interactive TTY.**
 
 #### `queries` element
-
 The `queries` element contains an array. Each element in the array can have the following values:
 | Key name           | Type     | required? | Description                                      |
 | ------------------ | -------- | ----------| -------------------------------------------------|
 | `sql`              | String   | yes       | The SQL query                                    |
-| `name`             | String   | no        | A human-readable name for the query              | 
-| `interval`         | Integer  | no        | The interval to wait between queries (default: infinity)     | 
-| `prefix`           | String   | no        | A prefix to be used in the Prometheus gauge name | 
-| `include_hostname` | boolean  | no        | Whether to include the hostname in the Prometheus gauge name (default: true) |
+| `name`             | String   | no        | A human-readable name for the query              |
+| `interval`         | Integer  | no        | The interval to wait between queries (default: infinity) |
+| `prefix`           | String   | no        | A prefix to be used in the Prometheus gauge name |
+| `include_hostname` | boolean  | no        | Whether to include the hostname in the Prometheus gauge name (default: false) |
 | `enabled`          | boolean  | no        | Whether this SQL query is enabled (default: true) |
 | `multi_row`        | boolean  | no        | Whether to enable multi-row mode (default: false) |
-
-
 
 **IMPORTANT NOTES ABOUT COLLECTED METRICS**
 - Only numeric values will be collected
@@ -277,10 +214,10 @@ The `queries` element contains an array. Each element in the array can have the 
 ```
 hostname__prefix_identifier
 ```
-(where `hostname` is the IBM i self-resolved hostname and `column` is the SQL column)
+(where `hostname` is the configured/system host name and `column` is the SQL column)
 - You can tailor the metric name in prometheus by changing the column name via the SQL query (using the SELECT `AS XXXX` syntax)
 - The `prefix` is only included if specified in the configuration
-- The `hostname` can be excluded via configuration
+- The `hostname` can be included via configuration
 - The `identifier` is the column name when running in single-row mode
 
 ## Collection data modes
@@ -288,15 +225,14 @@ hostname__prefix_identifier
 ### Single-row mode
 
 The default behavior for processing query output is single-row mode. If feasible, this is the recommended
-way to collect metrics. 
+way to collect metrics.
 In single-row mode, only the first row of results are processed, but the gauge names can be computed up front,
-since the identifier for the gauge is simply the column name. 
-
+since the identifier for the gauge is simply the column name.
 
 ### Multi-row mode
 
-Multi-row mode allows you to collect metrics from multiple rows of a JDBC query. When using multi-row mode,
-the value of the first column in each result is used to formulate a gauge name each time the query is run. 
+Multi-row mode allows you to collect metrics from multiple rows of a query. When using multi-row mode,
+the value of the first column in each result is used to formulate a gauge name each time the query is run.
 This has negative implications if the result set data does not have a consistent value in the first column.
 
 ## Collection timing modes
@@ -313,62 +249,25 @@ instance, if using a 60-second query interval:
 For efficiency's sake, this is the default behavior. This allows for aggressive Prometheus scrape intervals
 without putting excessive load on the monitored system.
 
-
 ### Point-in-time
 
 If omitted, the `interval` value for a query in the JSON configuration defaults to infinity. Metrics can be
 gathered upon-request by way of the `/metrics_now` endpoint. This approach provides the most up-to-date
-information to Prometheus, at intervals defined by Prometheus. However, use this approach with caution. 
+information to Prometheus, at intervals defined by Prometheus. However, use this approach with caution.
 It exposes the monitored system to excessive load if metrics are scraped often. When using this approach,
 the exporter still limits the query frequency to 5-second intervals.
 
 ## Managing with Service Commander (IBM i only)
 
-First, install Service Commander (package name `service-commander`)
-version 1.5.1 or later. 
-
-Then, from a command line, `cd` to the directory where you placed
-`prom-client-ibmi.jar` and run:
+Run the exporter binary with the `sc` argument:
 ```bash
-java -jar prom-client-ibmi.jar sc
+./PromExporter.Jdbc sc
 ```
 Follow the on-screen instructions. A `prometheus.yml` file will be created.
 Do not delete this file.
 
 The default configuration adds a `prometheus` to the `autostart` group
 to be launched automatically at IPL.
-
-
-# Installation and Startup (off IBM i)
-
-This Prometheus client can be run on a different platform and connect remotely to
-IBM i to gather statistics. Currently, however, only one remote system at a time
-is supported. 
-
-To enable this, populate `username`, `hostname`, and (optionally) `password` in
-the `config.json` file that is generated upon initial startup.
-
-For instance:
-
-```json
-  "username": "myuser",
-  "hostname": "systemname",
-  "password": "mypassword"
-```
-
-Note, however, that putting your password in a plaintext file is not recommended. 
-Instead, configure the username and hostname. You will be prompted for the password
-at runtime. 
-
-For instance:
-
-```json
-  "username": "myuser",
-  "hostname": "systemname"
-```
-
-
-(documentation forthcoming)
 
 # Metrics gathered with default config (IBM i)
 
@@ -453,6 +352,12 @@ For instance:
 - JOURNAL_RECOVERY_COUNT
 - JOURNAL_CACHE_WAIT_TIME
 - REMOTE_CONNECTIONS
+
+# Testing
+
+- Unit + SQLite integration tests: `dotnet test`
+- Prometheus end-to-end: `docker compose -f tests/e2e/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from assert`
+- Java↔.NET output parity gate: `tests/e2e/parity-check.sh`
 
 # Sample screenshot (visualization w/Grafana)
 

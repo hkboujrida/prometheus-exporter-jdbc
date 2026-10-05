@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PromExporter.Jdbc/PromExporter.Jdbc.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PromExporter.Jdbc.Tests/PromExporter.Jdbc.Tests.csproj" />
+  </Folder>
+</Solution>

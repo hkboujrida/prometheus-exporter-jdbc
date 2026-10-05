@@ -1,0 +1,40 @@
+# Parity-only compose: the two exporters + shared DB, host-mapped to different
+# ports so parity-check.sh can diff them directly. No Prometheus needed.
+name: promexporter-parity
+
+services:
+  seed:
+    image: python:3.12-alpine
+    volumes:
+      - ./db:/db
+      - ./seed_db.py:/seed_db.py:ro
+    command: ["python", "/seed_db.py", "/db/metrics.db"]
+
+  dotnet-exporter:
+    image: prom-dotnet-local
+    build:
+      context: ../..
+
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - ./db:/db
+      - ./configs/config-dotnet.json:/app/config.json:ro
+    environment:
+      - PORT=9853
+    ports:
+      - "19854:9853"
+
+  java-exporter:
+    image: prom-java-sqlite
+    build:
+      context: ./java-sqlite-image
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - ./db:/db
+      - ./configs/config-java.json:/app/config.json:ro
+    ports:
+      - "19853:9853"

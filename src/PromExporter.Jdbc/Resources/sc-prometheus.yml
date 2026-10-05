@@ -1,0 +1,11 @@
+name: Prometheus client
+dir: .
+start_cmd: ./PromExporter.Jdbc
+check_alive: '9853'
+batch_mode: 'false'
+
+environment_vars:
+- PATH=/QOpenSys/pkgs/bin:/QOpenSys/usr/bin:/usr/ccs/bin:/QOpenSys/usr/bin/X11:/usr/sbin:.:/usr/bin
+
+groups:
+- autostart

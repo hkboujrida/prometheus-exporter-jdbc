@@ -1,30 +1,32 @@
-# Use Maven with OpenJDK 8 for building
-FROM maven:3.8.6-openjdk-8-slim AS build
+# Build the .NET exporter
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
 
-# Set the working directory
+COPY PromExporter.slnx ./
+COPY src/PromExporter.Jdbc/PromExporter.Jdbc.csproj src/PromExporter.Jdbc/
+RUN dotnet restore src/PromExporter.Jdbc/PromExporter.Jdbc.csproj
+
+COPY src/PromExporter.Jdbc/ src/PromExporter.Jdbc/
+RUN dotnet publish src/PromExporter.Jdbc/PromExporter.Jdbc.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+# Runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
+COPY --from=build /app/publish ./
 
-# Copy the pom.xml and source code
-COPY pom.xml .
-COPY src ./src
+# curl for HEALTHCHECK only; non-root runtime user
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd -r -u 10001 exporter \
+    && chown -R exporter:exporter /app
+USER exporter
 
-# Build the application
-RUN mvn clean package -DskipTests
-
-# Use Eclipse Temurin 8 JRE for running
-FROM eclipse-temurin:8-jre
-
-# Set the working directory
-WORKDIR /app
-
-# Copy the built JAR from the build stage
-COPY --from=build /app/target/*-jar-with-dependencies.jar app.jar
-
-# Copy the default config file
-COPY src/main/resources/com/ibm/jesseg/prometheus/config.json config.json
-
-# Expose the default port
 EXPOSE 9853
+ENV PORT=9853
+ENV ASPNETCORE_URLS=
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
+    CMD curl -fs "http://127.0.0.1:${PORT}/metrics" || exit 1
+
+ENTRYPOINT ["dotnet", "PromExporter.Jdbc.dll"]

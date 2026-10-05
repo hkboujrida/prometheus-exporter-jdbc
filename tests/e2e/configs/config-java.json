@@ -1,0 +1,12 @@
+{
+  "port": 9853,
+  "driver_class": "org.sqlite.JDBC",
+  "hostname": "jdbc:sqlite:/db/metrics.db",
+  "username": "u",
+  "password": "p",
+  "queries": [
+    { "name": "stats", "sql": "SELECT * FROM stats", "prefix": "STAT", "interval": 2 },
+    { "name": "pools", "sql": "SELECT * FROM pools", "multi_row": true, "prefix": "POOL" },
+    { "name": "on-demand", "sql": "SELECT CNT FROM stats", "prefix": "NOWONLY" }
+  ]
+}

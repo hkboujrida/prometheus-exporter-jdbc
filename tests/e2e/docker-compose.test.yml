@@ -1,0 +1,58 @@
+# E2E harness: the .NET exporter image + the reference Java exporter image
+# against one shared SQLite DB, scraped by a real Prometheus.
+#
+#   tests/e2e/java-sqlite-image/fetch-drivers.sh   # one-time driver download
+#   docker compose -f tests/e2e/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from assert
+#
+# Run scripts: see parity-check.sh / e2e-assert.sh (they wrap this file).
+
+name: promexporter-e2e
+
+services:
+  seed:
+    image: python:3.12-alpine
+    volumes:
+      - ./db:/db
+      - ./seed_db.py:/seed_db.py:ro
+    command: ["python", "/seed_db.py", "/db/metrics.db"]
+
+  dotnet-exporter:
+    image: prom-dotnet-local
+    build:
+      context: ../..
+
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - ./db:/db
+      - ./configs/config-dotnet.json:/app/config.json:ro
+
+  java-exporter:
+    image: prom-java-sqlite
+    build:
+      context: ./java-sqlite-image
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    volumes:
+      - ./db:/db
+      - ./configs/config-java.json:/app/config.json:ro
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    depends_on:
+      - dotnet-exporter
+      - java-exporter
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9099:9090"
+
+  assert:
+    image: curlimages/curl:8.8.0
+    depends_on:
+      - prometheus
+    entrypoint: ["sh", "/assert.sh"]
+    volumes:
+      - ./e2e-assert.sh:/assert.sh:ro

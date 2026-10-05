@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PromExporter.Jdbc</RootNamespace>
+    <AssemblyName>PromExporter.Jdbc</AssemblyName>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="PromExporter.Jdbc.Tests" />
+    <EmbeddedResource Include="Resources/default-config.json" />
+    <EmbeddedResource Include="Resources/sc-prometheus.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageReference Include="prometheus-net" Version="8.2.1" />
+    <PackageReference Include="System.Data.Odbc" Version="10.0.12" />
+  </ItemGroup>
+
+</Project>
