@@ -135,5 +135,9 @@ no config file + interactive TTY generates the IBM i default config.
   (host port 19853) and .NET (19854) across update/error/recovery rounds; its
   6 s sleeps are tuned to the 5 s `/metrics_now` tolerance — don't shorten
   them. Both configs pin `hostname` in JSON because Docker injects `HOSTNAME`.
+- `tests/ibmi-smoke/` is the IBM i field-test kit: builds the image with
+  `--build-arg ACS_ODBC=true` (proprietary IBM i Access ODBC driver from IBM's
+  public apt repo) and asserts live QSYS2 gauges against a real system.
+  Needs credentials (`IBMI_HOST/USER/PASS`); works against free PUB400.COM.
 - Neither gate runs in CI yet; run both locally before touching gather,
   naming, or exposition code.

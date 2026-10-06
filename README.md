@@ -140,8 +140,14 @@ Oracle, Postgres) is loaded dynamically:
 }
 ```
 
-For IBM i inside Docker, build the image with the ACS ODBC driver installed,
-or run the exporter on a host that has it and point `hostname` at your system.
+For IBM i inside Docker, build the image with the ACS ODBC driver included:
+`docker build --build-arg ACS_ODBC=true -t prometheus-exporter-jdbc .`
+(installs `ibm-iaccess` from IBM's public apt repo). Alternatively run the
+exporter on a host that already has the driver and point `hostname` at your
+system. To field-test against a real system — e.g. the free public
+[PUB400.COM](https://pub400.com) IBM i server — run
+`IBMI_HOST=... IBMI_USER=... IBMI_PASS=... tests/ibmi-smoke/smoke-ibmi.sh`
+(builds the driver image, runs the shipped QSYS2 queries, asserts live gauges).
 
 ### Running headless
 If you would like to run the program in the background so that you can exit

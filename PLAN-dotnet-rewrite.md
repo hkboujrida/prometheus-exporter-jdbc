@@ -287,3 +287,12 @@ README's metric list (TOTAL_JOBS_IN_SYSTEM, …) present via
   - One connection per collector (matches Java per-populator ConnectionManager);
     a shared connection raced under `/metrics_now` Task.WhenAll.
   - prometheus-net name validation forced the leading-digit `_` prefix fix.
+- L5 IBM i: the Dockerfile gained `--build-arg ACS_ODBC=true`, installing the
+  proprietary IBM i Access ODBC driver (`ibm-iaccess`) from IBM's public apt
+  repo; verified the driver registers (`odbcinst -q -d`) and completes real
+  sign-on negotiation against the public PUB400.COM system — it rejected only
+  the fake profile, proving the ODBC→App400→DB2 path from the image.
+- L5 harness: `tests/ibmi-smoke/smoke-ibmi.sh` builds that image, runs shipped
+  QSYS2 queries (single-row, table function, multi-row, on-demand) against
+  `IBMI_HOST` and asserts live gauges. First live run pending a free
+  PUB400.COM account.

@@ -1,0 +1,33 @@
+{
+  "port": 9853,
+  "provider": "odbc",
+  "connection_string": "Driver=IBM i Access ODBC Driver;System=__HOST__;UID=__USER__;PWD=__PASS__;",
+  "username": "__USER__",
+  "hostname": "__HOST__",
+  "queries": [
+    {
+      "name": "tables",
+      "sql": "SELECT COUNT(*) AS TABLE_COUNT FROM QSYS2.SYSTABLES",
+      "prefix": "SYS",
+      "interval": 15
+    },
+    {
+      "name": "jobs",
+      "sql": "SELECT COUNT(*) AS JOB_COUNT FROM TABLE(QSYS2.ACTIVE_JOB_INFO(SUBSYSTEM_LIST_FILTER => '*ALL')) X",
+      "prefix": "SYS",
+      "interval": 15
+    },
+    {
+      "name": "schemas",
+      "sql": "SELECT TABLE_SCHEMA, COUNT(*) AS CNT FROM QSYS2.SYSTABLES GROUP BY TABLE_SCHEMA ORDER BY 2 DESC FETCH FIRST 5 ROWS ONLY",
+      "prefix": "SCHEMA",
+      "multi_row": true,
+      "interval": 15
+    },
+    {
+      "name": "oslevel",
+      "sql": "SELECT OS_VERSION, OS_RELEASE FROM SYSIBMADM.ENV_SYS_INFO",
+      "prefix": "ENV"
+    }
+  ]
+}
